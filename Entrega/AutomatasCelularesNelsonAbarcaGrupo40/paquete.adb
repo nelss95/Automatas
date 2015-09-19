@@ -1,31 +1,31 @@
-with Gnat.IO;use GNAT.IO;
+with Text_IO,Sequential_IO,Direct_IO;
+use Text_IO;
+with paquete;
 
---package body paquete is
-procedure consola is
-Num : Integer;
-Indice : Integer:= 8;
-Tiempo : Integer;
-Ancho : Integer;
---P:Integer;
-type Estado is array(1..3) of Integer;
-Cero:Estado:=(0,0,0);
-Uno:Estado:=(0,0,1);
-Dos:Estado:=(0,1,0);
-Tres:Estado:=(0,1,1);
-Cuatro:Estado:=(1,0,0);
-Cinco:Estado:=(1,0,1);
-Seis:Estado:=(1,1,0);
-Siete:Estado:=(1,1,1);
-segmento:Estado:=(0,0,0);
-type mapa is array (1..2048) of Integer;
-listaActual:mapa;
-listaSecundaria:mapa;
-Bin:array(1..8) of Integer:=(0,0,0,0,0,0,0,0);
+package body paquete is
+procedure automata (Ancho:Integer;Numero:Integer) is ---Ancho es el ancho que tendrá el bitmap(Tiempo*2),Numero es el numero ingresado por el usuario
+Num : Integer:=Numero;--variable donde se guarda el número
+Indice : Integer:= 8; --Indice para la convercion a binario 
+Tiempo : Integer; --El tiempo ingresado por el usuario que lo sacaremos con Ancho/2
+type Estado is array(1..3) of Integer; --Array para crear los posibles 8 estados binarios
+Cero:Estado:=(0,0,0); ---Estado 0 en binario
+Uno:Estado:=(0,0,1); ---Estado 1 en binario
+Dos:Estado:=(0,1,0); --Estado 2 en binario
+Tres:Estado:=(0,1,1); --Estado 3 en binario
+Cuatro:Estado:=(1,0,0); --Estado 4 en binario
+Cinco:Estado:=(1,0,1); --Estado 5 en binario
+Seis:Estado:=(1,1,0); --Estado 6 en binario
+Siete:Estado:=(1,1,1); --Estado 7 en binario
+segmento:Estado:=(0,0,0); --Segemento será un estado cambiante
+type mapa is array (1..Ancho) of Integer; --El tipo mapa es un array, que es donde escribiremos los 1 y 0
+listaActual:mapa; --listaActual es la lista que se recorre para leer y sacar los tercios
+listaSecundaria:mapa; --listaSecundaria es la lista en donde se escribira el resultado de las comparaciones
+Bin:array(1..8) of Integer:=(0,0,0,0,0,0,0,0); --donde se guardara el numero itroducido por el usuario en binario
 
-      --Imagen-
---Imagen:File_Type;
---Guardar:String:=Integer'Image(0);
-
+--- creamos la imagen---
+Imagen:File_Type;
+Guardar:String:=Integer'Image(0);
+---------Función para comparar las tripletas---------------
 function compararVecinos(A:Estado) return Integer is
    begin
 
@@ -78,37 +78,43 @@ function compararVecinos(A:Estado) return Integer is
 
 
 begin
-
-    Put("Digite un numero entero del 0 al 255: ");
-    Get(Num);
-   
-    
+---Convertimos el numero que nos dio el usuario a binario
     while Num>1 loop
     	bin(Indice):= Num mod 2;
     	Num:= Num/2;
     	Indice:=Indice-1;
     end loop;
     bin(Indice):=Num;
+----Creamos el tiempo---------------
+     Tiempo:= Ancho/2;
+--Cremos el archivo----
+      Create (Imagen,out_File,"Automata.pnm");
+      Put(Imagen,"P1");
+      Put(Imagen,ASCII.LF);
+      Put(Imagen,"# feep.pbm");
+      Put(Imagen,ASCII.LF);
+      Put(Imagen,Integer'Image(Ancho) & Integer'Image(Tiempo));
+      Put(Imagen,ASCII.LF);
 
-   Put("Digite el tiempo del automata: ");
-   Get(Tiempo);
-   Ancho := Tiempo*2;
+
+
+
  --Inicializa los ciclos de 1 a T con 0.
     for P in 1..Ancho loop
         listaActual(P):=0;
         listaSecundaria(P):=0;
     end loop;
-          
+--- Colocamos un 1 en la mitad de la lista          
     listaActual(Tiempo):=1;
-          
+--- Escribimos la primera linea         
     for I in 1..Ancho loop
-      Put(listaActual(I));
+      Guardar:=Integer'Image(listaActual(I));
+      Put(Imagen,Guardar);
    end loop;
 
-    for varTiempo in 1..Tiempo loop
-        for varAncho in 1..Ancho loop
-	-- if (listaActual(varAncho)= 1 ) then
-	 --Eleccion del tercio al lado izquierdo del 1--
+    for varTiempo in 1..Tiempo loop --ciclo que recorrer los tiempos que dio el usuario
+        for varAncho in 1..Ancho loop -- ciclo para recorrer el ancho de cada lista
+	 --Eleccion del tercio al lado izquierdo--
 	     if (varAncho > 2 ) then 
 	         segmento(1) := listaActual(varAncho-2);
 	         segmento(2) := listaActual(varAncho-1); 
@@ -160,14 +166,13 @@ begin
 	         listaSecundaria(1) := compararVecinos(segmento);
  	    
 	     end if;
-	-- end if;       
 	end loop;
-	--Muestra el nuevo array
-	 New_Line;
+	--Escribimos el nuevo array
+	 Put(Imagen,ASCII.LF);
 	for I in 1..Ancho loop
-	   Put((listaSecundaria(I)));
+	   Put(Imagen,Integer'Image(listaSecundaria(I)));
 	end loop;
-	
+	---Asigmaos la nueva lista actual y ponemos en 0 la secundaria
 	listaActual:=listaSecundaria;
                For I in 1..Ancho loop
                  listaSecundaria(I):=0;
@@ -178,5 +183,5 @@ begin
 	
 
 null;
-end consola;
-
+end automata;
+end paquete;
